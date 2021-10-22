@@ -17,12 +17,14 @@ source=('manual://raid_linux_driver_8_01_00_039_public.zip'
         'dkms.conf'
         'linux-4.15.patch'
 		'linux-5.4.patch'
-		'linux-5.6.patch')
+		'linux-5.6.patch'
+		'linux-5.14.patch')
 md5sums=('f5692d2ef952f8c903af90cdd9eb3ce6'
         '3a14dcc84daf257a62727bcde1882edf'
         '461866e715a1fded49a3f7c043a173d7'
 		'cac98de11cc5bd61fff72ff1c8cf363d'
-		'bd1ef2b6bcefaec0abf7a832e937f01a')
+		'bd1ef2b6bcefaec0abf7a832e937f01a'
+		'956ccadfdf4fc4188ec0ab79b7311a71')
 
 prepare() {
     if [ ! -d ${_pkgbase}-${pkgver} ]; then
@@ -38,6 +40,7 @@ build() {
   patch -p1 -i "${srcdir}"/linux-4.15.patch
   patch -p1 -i "${srcdir}"/linux-5.4.patch
   patch -p1 -i "${srcdir}"/linux-5.6.patch
+  patch -p1 -i "${srcdir}"/linux-5.14.patch
 
   make KVERS="${_kver}" all
 }

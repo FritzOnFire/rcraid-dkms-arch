@@ -1,0 +1,68 @@
+diff --git a/rc.h b/rc.h
+index 96528cd..c518656 100644
+--- a/rc.h
++++ b/rc.h
+@@ -43,6 +43,7 @@
+ #include <scsi/scsi_device.h>
+ #include <scsi/scsi_cmnd.h>
+ #include <scsi/scsi_tcq.h>
++#include <scsi/scsi_proto.h>
+ 
+ #include <linux/delay.h>
+ #include <linux/timer.h>
+@@ -173,8 +174,8 @@ enum {
+     RC_ODD_DEVICE_ODDZ,
+     RC_ODD_DEVICE_ODDL,
+     RC_ODD_DEVICE_ODD8
+-};
+-
++};
++
+ //
+ // Pulled from rc_event.c
+ //
+@@ -218,8 +219,8 @@ typedef struct rc_thread_s {
+ 
+ extern rc_thread_t rc_thread[];
+ 
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,13,0)
+ #define DEVICE_ACPI_HANDLE(dev) ((acpi_handle)ACPI_HANDLE(dev))
+-#endif
++#endif
+ 
+ #endif // _RC_OSHEADERS_H_
+diff --git a/rc_msg.c b/rc_msg.c
+index fb442d8..4e5071a 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -1465,8 +1465,10 @@ rc_msg_send_srb(struct scsi_cmnd * scp)
+ 	srb->dev_private  = (char *)srb->sg_list + sg_list_size;
+ #if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,26)
+ 	srb->timeout      = scp->timeout_per_command/HZ;
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,14,0)
+ 	srb->timeout      = scp->request->timeout/HZ;
++#else
++	srb->timeout      = scsi_cmd_to_rq(scp)->timeout/HZ;
+ #endif
+ 	srb->seq_num      = rc_srb_seq_num++;
+ 
+@@ -1868,7 +1870,7 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 	if (srb->status == RC_SRB_STATUS_SUCCESS) {
+ 		 //rc_printk(RC_DEBUG2, "%s: seq_num %d SUCCESS\n", __FUNCTION__,
+ 		 //          srb->seq_num);
+-		scp->result = DID_OK << 16 | COMMAND_COMPLETE << 8 | GOOD;
++		scp->result = DID_OK << 16 | COMMAND_COMPLETE << 8 | SAM_STAT_GOOD;
+ 
+ 		GET_IO_REQUEST_LOCK_IRQSAVE(irql);
+ 		scp->scsi_done(scp);
+@@ -1908,7 +1910,7 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 	 */
+ 	rc_dump_scp(scp);
+ 
+-	scp->result = DID_OK << 16 | COMMAND_COMPLETE << 8 | CHECK_CONDITION;
++	scp->result = DID_OK << 16 | COMMAND_COMPLETE << 8 | SAM_STAT_CHECK_CONDITION;
+ 
+ 	if (! (srb->flags & RC_SRB_FLAGS_SENSEVALID)) {
+ 		if (srb->status == RC_SRB_STATUS_INVALID_REQUEST) {
