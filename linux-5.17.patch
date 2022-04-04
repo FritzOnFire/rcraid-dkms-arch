@@ -1,0 +1,144 @@
+diff --git a/rc_config.c b/rc_config.c
+index 1692640..3946b10 100644
+--- a/rc_config.c
++++ b/rc_config.c
+@@ -8,7 +8,6 @@
+ #include <linux/module.h>
+ #include <linux/fs.h>
+ #include <linux/miscdevice.h>
+-#include <linux/genhd.h>
+ #include <linux/sched.h>
+ #include <linux/completion.h>
+ 
+@@ -39,8 +38,8 @@ extern void rc_msg_process_srb(rc_srb_t *);
+ 
+ struct semaphore rccfg_wait;
+ 
+-static void 
+-rccfg_callback (rc_srb_t *srb) 
++static void
++rccfg_callback (rc_srb_t *srb)
+ {
+ 	up(&rccfg_wait);
+ }
+@@ -154,19 +153,19 @@ rccfg_io(struct sg_io_hdr *hdr)
+ 		state->srb_q.tail = srb;
+ 	}
+ 	spin_unlock_irqrestore(&state->srb_q.lock, irql);
+-    
++
+ 	state->stats.scb_total++;
+ 	state->stats.target_total[target]++;
+ 
+ 	atomic_inc(&state->stats.scb_pending);
+ 	atomic_inc(&state->stats.target_pending[target]);
+-    
++
+ 	tasklet_schedule(&state->srb_q.tasklet);
+ 
+         // wait for callback completion
+ 	down(&rccfg_wait);
+ 
+-	/* copy the srb status back into the sg hdr status 
++	/* copy the srb status back into the sg hdr status
+ 	 * this is appear to all that the user space uses
+ 	 * for error reporting, but it might need sense data
+ 	 * at some point
+diff --git a/rc_init.c b/rc_init.c
+index 1b7aea3..f388763 100644
+--- a/rc_init.c
++++ b/rc_init.c
+@@ -352,6 +352,7 @@ static Scsi_Host_Template driver_template = {
+ 	.use_clustering =          ENABLE_CLUSTERING,
+ #endif
+ 	.slave_configure =         rc_slave_cfg,
++	.cmd_size =                sizeof(rc_pcmd_t),
+ };
+ 
+ /*
+@@ -1422,19 +1423,21 @@ int rc_queue_cmd_lck (struct scsi_cmnd * scp)
+ int
+ rc_eh_abort_cmd (struct scsi_cmnd * scp)
+ {
++	rc_pcmd_t *pcmd;
+ 	rc_srb_t *srb;
+ 
+ 	rc_printk(RC_ERROR, "rc_eh_abort_cmd: scp: 0x%p bus %d target %d\n",
+ 		  scp, scp->device->channel, scp->device->id);
+ 	// rc_config_debug = 1;
+ 
+-	srb = (rc_srb_t *)scp->SCp.ptr;
++	pcmd = (rc_pcmd_t *)scsi_cmd_priv(scp);
++	srb = pcmd->srb_ptr;
+ 	if (srb != NULL) {
+ 		rc_printk(RC_DEBUG, "\tsrb: 0x%p seq_num %d function %x status %x "
+ 			  "flags %x b/t/l %d/%d/%d\n", srb, srb->seq_num, srb->function,
+ 			  srb->status, srb->flags, srb->bus, srb->target, srb->lun);
+ 		srb->scsi_context = NULL;
+-		scp->SCp.ptr = NULL;
++		pcmd->srb_ptr = NULL;
+ 	} else {
+ 		rc_printk(RC_WARN, "rc_eh_abort_cmd: srb already completed\n");
+ 		// most likely here because we already processed srb
+diff --git a/rc_msg.c b/rc_msg.c
+index 3a560ee..1160c3c 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -1399,6 +1399,7 @@ int
+ rc_msg_send_srb(struct scsi_cmnd * scp)
+ {
+ 	rc_softstate_t *state;
++	rc_pcmd_t      *pcmd;
+ 	rc_srb_t       *srb;
+ 	int             size;
+ 	int             bus, target, lun;
+@@ -1472,10 +1473,11 @@ rc_msg_send_srb(struct scsi_cmnd * scp)
+ #endif
+ 	srb->seq_num      = rc_srb_seq_num++;
+ 
+-	/* the scsi_cmnd pointer points at our srb, at least until the command is
+-	 * aborted
++	/* our private command data struct contains the pointer to our srb, at least
++	 * until the command is aborted
+ 	 */
+-	scp->SCp.ptr = (void *)srb;
++	pcmd = (rc_pcmd_t *)scsi_cmd_priv(scp);
++	pcmd->srb_ptr = srb;
+ 
+ 	rc_msg_build_sg(srb);
+ 
+@@ -1829,6 +1831,7 @@ void
+ rc_msg_srb_complete(struct rc_srb_s *srb)
+ {
+ 	struct scsi_cmnd    *scp;
++	rc_pcmd_t *pcmd;
+ 	rc_softstate_t *state;
+ 
+ 	state = &rc_state;
+@@ -1865,7 +1868,8 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 		return;
+ 	}
+ 
+-	scp->SCp.ptr = NULL;
++	pcmd = (rc_pcmd_t *)scsi_cmd_priv(scp);
++	pcmd->srb_ptr = NULL;
+ 
+ 	if (srb->status == RC_SRB_STATUS_SUCCESS) {
+ 		 //rc_printk(RC_DEBUG2, "%s: seq_num %d SUCCESS\n", __FUNCTION__,
+diff --git a/rc_srb.h b/rc_srb.h
+index 735b9d0..7493d31 100644
+--- a/rc_srb.h
++++ b/rc_srb.h
+@@ -173,5 +173,12 @@ typedef struct rc_srb_s {
+ 	// beginning of the sg_list.
+ } rc_srb_t;
+ 
++/*
++ * Private command data
++ */
++typedef struct rc_pcmd_s {
++  rc_srb_t *srb_ptr;
++} rc_pcmd_t;
++
+ 
+ #endif /*RC_SRB_H*/
