@@ -1,0 +1,98 @@
+diff --git a/rc_init.c b/rc_init.c
+index 4a4b3dc..1b7aea3 100644
+--- a/rc_init.c
++++ b/rc_init.c
+@@ -180,8 +180,10 @@ int         rc_bios_params(struct scsi_device *sdev, struct block_device *bdev,
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
+ int         rc_queue_cmd(struct scsi_cmnd * scp, void (*CompletionRoutine) (struct scsi_cmnd *));
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,15,0)
+ int         rc_queue_cmd_lck(struct scsi_cmnd * scp, void (*CompletionRoutine) (struct scsi_cmnd *));
++#else
++int         rc_queue_cmd_lck(struct scsi_cmnd * scp);
+ #endif
+ 
+ #ifdef RC_AHCI_SUPPORT
+@@ -858,9 +860,8 @@ void
+ rc_shutdown_host(struct Scsi_Host *host_ptr)
+ {
+ 	if ((rc_state.state & USE_OSIC) == 0) return;
+-
+-	
+-	rc_state.state |= SHUTDOWN;
++
++	rc_state.state |= SHUTDOWN;
+ 
+ 	rc_printk(RC_DEBUG, "rc_shutdown_host\n" );
+ 	rc_msg_shutdown(&rc_state);
+@@ -1385,12 +1386,13 @@ int rc_mpt2_shutdown(rc_adapter_t *adapter)
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
+ int rc_queue_cmd (struct scsi_cmnd * scp, void (*CompletionRoutine) (struct scsi_cmnd *))
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5,15,0)
+ int rc_queue_cmd_lck (struct scsi_cmnd * scp, void (*CompletionRoutine) (struct scsi_cmnd *))
++#else
++int rc_queue_cmd_lck (struct scsi_cmnd * scp)
+ #endif
+ 
+ {
+-	scp->scsi_done = CompletionRoutine;
+ 	//#define FAIL_ALL_IO 0
+ 
+ #ifdef FAIL_ALL_IO
+@@ -1978,10 +1980,10 @@ rc_ioctl (struct scsi_device * scsi_dev_ptr,
+ 
+ 
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+-
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
++
+ static int info_buffer_size = 0;
+-static char *info_buffer = NULL;
++static char *info_buffer = NULL;
+ 
+ /*
+  * rc_proc_info()
+diff --git a/rc_msg.c b/rc_msg.c
+index 4e5071a..3a560ee 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -1423,7 +1423,7 @@ rc_msg_send_srb(struct scsi_cmnd * scp)
+ 		rc_printk(RC_ERROR, "rc_msg_send_srb:  scatter-gather list too large "
+ 			  "(%d)\n", scsi_sg_count(scp));
+  		scp->result = DID_NO_CONNECT << 16;
+- 		scp->scsi_done(scp);
++ 		scsi_done(scp);
+ 		return 0;
+ 	}
+ 
+@@ -1873,7 +1873,7 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 		scp->result = DID_OK << 16 | COMMAND_COMPLETE << 8 | SAM_STAT_GOOD;
+ 
+ 		GET_IO_REQUEST_LOCK_IRQSAVE(irql);
+-		scp->scsi_done(scp);
++		scsi_done(scp);
+ 		PUT_IO_REQUEST_LOCK_IRQRESTORE(irql);
+ 		srb->seq_num = -1;
+ 		kfree(srb);
+@@ -1892,7 +1892,7 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 			  srb->seq_num);
+ 		scp->result = DID_BAD_TARGET << 16;
+ 		GET_IO_REQUEST_LOCK_IRQSAVE(irql);
+-		scp->scsi_done(scp);
++		scsi_done(scp);
+ 		PUT_IO_REQUEST_LOCK_IRQRESTORE(irql);
+ 		srb->seq_num = -1;
+ 		kfree(srb);
+@@ -1929,7 +1929,7 @@ rc_msg_srb_complete(struct rc_srb_s *srb)
+ 	}
+ 
+ 	GET_IO_REQUEST_LOCK_IRQSAVE(irql);
+-	scp->scsi_done (scp);
++	scsi_done(scp);
+ 	PUT_IO_REQUEST_LOCK_IRQRESTORE(irql);
+ 	srb->seq_num = -1;
+ 	kfree(srb);

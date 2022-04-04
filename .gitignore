@@ -1,4 +1,5 @@
 pkg/
 src/
 rcraid-dkms-*-x86_64.pkg.tar.xz
+rcraid-dkms-*-x86_64.pkg.tar.zst
 raid_linux_driver_*_public.zip
