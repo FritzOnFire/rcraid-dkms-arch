@@ -1,0 +1,83 @@
+diff --git a/rc_init.c b/rc_init.c
+index f388763..e7cf9a7 100644
+--- a/rc_init.c
++++ b/rc_init.c
+@@ -524,12 +524,12 @@ rc_init_adapter(struct pci_dev *dev, const struct pci_device_id *id)
+ 	/*
+ 	 * set dma_mask to 64 bit capabilities but if that fails, try 32 bit
+ 	 */
+-	if (!pci_set_dma_mask(dev, DMA_BIT_MASK(64)) &&
+-	    !pci_set_consistent_dma_mask(dev, DMA_BIT_MASK(64))) {
++	if (!dma_set_mask(&dev->dev, DMA_BIT_MASK(64)) &&
++		!dma_set_coherent_mask(&dev->dev, DMA_BIT_MASK(64))) {
+ 		rc_printk(RC_NOTE, RC_DRIVER_NAME ": %s 64 bit DMA enabled\n",
+ 			  __FUNCTION__);
+-	} else if (!pci_set_dma_mask(dev, DMA_BIT_MASK(32)) &&
+-		   !pci_set_consistent_dma_mask(dev, DMA_BIT_MASK(32))) {
++	} else if (!dma_set_mask(&dev->dev, DMA_BIT_MASK(32)) &&
++		   !dma_set_coherent_mask(&dev->dev, DMA_BIT_MASK(32))) {
+ 		rc_printk(RC_NOTE, RC_DRIVER_NAME ": %s 64 bit DMA disabled\n",
+ 			  __FUNCTION__);
+ 	} else {
+@@ -903,7 +903,7 @@ rc_shutdown_adapter(rc_adapter_t *adapter)
+ 	rc_printk(RC_DEBUG, "%s: free private_mem 0x%p\n",
+ 		  __FUNCTION__, adapter->private_mem.vaddr);
+ 	if (adapter->private_mem.vaddr)  {
+-		pci_free_consistent(adapter->pdev,
++		dma_free_coherent(&adapter->pdev->dev,
+ 				    rc_state.memsize_per_controller,
+ 				    adapter->private_mem.vaddr,
+ 				    adapter->private_mem.dma_address);
+diff --git a/rc_msg.c b/rc_msg.c
+index 1160c3c..ca66dd6 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -1113,9 +1113,10 @@ rc_msg_init(rc_softstate_t *state)
+ 		if (adapter == (rc_adapter_t *)0) {
+ 			rc_printk(RC_ERROR, "rc_msg_init null adapter\n");
+ 		}
+-		addr = pci_alloc_consistent(adapter->pdev,
++		addr = dma_alloc_coherent(&adapter->pdev->dev,
+ 					    state->memsize_per_controller,
+-					    &adapter->private_mem.dma_address);
++					    &adapter->private_mem.dma_address,
++						GFP_ATOMIC);
+ 
+ 		if (addr == (void *)0) {
+ 			rc_printk(RC_ERROR,"rc_msg_init: can not alloc %d bytes of per "
+@@ -2193,7 +2194,7 @@ rc_msg_get_dma_memory(alloc_dma_address_t *dma_address)
+     dmaHandle = (dma_addr_t*) &dma_address->dmaHandle;
+ 
+ 
+-    dma_address->cpu_addr = pci_alloc_consistent(adapter->pdev,dma_address->bytes, dmaHandle );
++    dma_address->cpu_addr = dma_alloc_coherent(&adapter->pdev->dev, dma_address->bytes, dmaHandle, GFP_ATOMIC);
+ 
+     if (dma_address->cpu_addr)
+     {
+@@ -2204,7 +2205,7 @@ rc_msg_get_dma_memory(alloc_dma_address_t *dma_address)
+ void
+ rc_msg_free_dma_memory(rc_adapter_t	*adapter, void *cpu_addr, dma_addr_t dmaHandle, rc_uint32_t bytes)
+ {
+-    pci_free_consistent(adapter->pdev, bytes, cpu_addr, dmaHandle);
++    dma_free_coherent(&adapter->pdev->dev, bytes, cpu_addr, dmaHandle);
+ }
+ 
+ void
+@@ -2293,7 +2294,7 @@ rc_msg_map_mem(struct map_memory_s *map)
+ 			if (len < len_mapped)
+ 				len_mapped = len;
+ 
+-			map->physical_address = dma_map_page(&adapter->pdev->dev, page, offset, len_mapped, PCI_DMA_BIDIRECTIONAL);
++			map->physical_address = dma_map_page(&adapter->pdev->dev, page, offset, len_mapped, DMA_BIDIRECTIONAL);
+             if (dma_mapping_error(&adapter->pdev->dev, map->physical_address))
+             {
+                 map->number_bytes = 0;
+@@ -2304,7 +2305,7 @@ rc_msg_map_mem(struct map_memory_s *map)
+     } else if ((map->memory_id & MEM_TYPE) == RC_MEM_DMA) {
+         vaddr = (void *)(rc_uint_ptr_t)map->address;
+ 
+-        map->physical_address = dma_map_single(&adapter->pdev->dev, vaddr, map->number_bytes, PCI_DMA_BIDIRECTIONAL);
++        map->physical_address = dma_map_single(&adapter->pdev->dev, vaddr, map->number_bytes, DMA_BIDIRECTIONAL);
+         if (dma_mapping_error(&adapter->pdev->dev, map->physical_address))
+         {
+             map->number_bytes = 0;
