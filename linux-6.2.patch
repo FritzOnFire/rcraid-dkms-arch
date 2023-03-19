@@ -1,0 +1,30 @@
+diff --git a/rc_init.c b/rc_init.c
+index e7cf9a7..5c6defa 100644
+--- a/rc_init.c
++++ b/rc_init.c
+@@ -332,7 +332,6 @@ static Scsi_Host_Template driver_template = {
+ 	.module =                  THIS_MODULE,
+ 	.name =                    RC_DRIVER_NAME,
+ 	.proc_name =               RC_DRIVER_NAME,
+-	.proc_dir =                NULL,
+ 	.info =                    rc_info,
+ 	.ioctl =                   rc_ioctl,
+ 	.queuecommand =            rc_queue_cmd,
+@@ -740,7 +739,7 @@ rc_init_host(struct pci_dev *pdev)
+ 		return error;
+ 
+ 	rc_printk(RC_DEBUG, "rc_init_host: calling scsi_host_alloc\n");
+-	host_ptr = scsi_host_alloc (&driver_template, 32);
++	host_ptr = scsi_host_alloc(&driver_template, 32);
+ 	if (!host_ptr)
+ 		return -ENOMEM;
+ 
+@@ -767,8 +766,6 @@ rc_init_host(struct pci_dev *pdev)
+ 	host_ptr->unique_id = 0;
+ 	host_ptr->this_id = -1;  /* SCSI Id for the adapter itself */
+ 
+-	driver_template.present = 1;    /* one virtual adapter */
+-
+ 	error = scsi_add_host(host_ptr, &pdev->dev);
+ 
+ 	if (error) {
