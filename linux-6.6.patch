@@ -1,0 +1,40 @@
+diff --git a/rc_msg.c b/rc_msg.c
+index ca66dd6..a8e8138 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -81,7 +81,7 @@ static struct rc_interface_s *rc_interface_header = &RC_OurInterfaceStruct;
+ 
+ int rc_srb_seq_num = 0;
+ 
+-static void rc_sysrq_intr (int key
++static void rc_sysrq_intr (unsigned char key
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+ 			   ,struct pt_regs *pt_regs
+ #endif
+@@ -90,7 +90,7 @@ static void rc_sysrq_intr (int key
+ #endif
+ 			   );
+ 
+-static void rc_sysrq_state (int key
++static void rc_sysrq_state (unsigned char key
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+ 			    ,struct pt_regs *pt_regs
+ #endif
+@@ -2558,7 +2558,7 @@ rc_msg_stats(char *buf, int buf_size)
+ 	return(cnt);
+ }
+ 
+-static void rc_sysrq_intr (int key
++static void rc_sysrq_intr (unsigned char key
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+ 			   ,struct pt_regs *pt_regs
+ #endif
+@@ -2582,7 +2582,7 @@ static void rc_sysrq_intr (int key
+ 	rc_printk(RC_ALERT, "scheduling tasklet interrupt\n");
+ }
+ 
+-static void rc_sysrq_state (int key
++static void rc_sysrq_state (unsigned char key
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,19)
+ 			    ,struct pt_regs *pt_regs
+ #endif

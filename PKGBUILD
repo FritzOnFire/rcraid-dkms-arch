@@ -23,7 +23,8 @@ source=('manual://raid_linux_driver_8_01_00_039_public.zip'
 		'linux-5.17.patch'
 		'linux-5.18.patch'
 		'linux-6.2.patch'
-		'linux-6.4.patch')
+		'linux-6.4.patch'
+		'linux-6.6.patch')
 md5sums=('f5692d2ef952f8c903af90cdd9eb3ce6'
          '3a14dcc84daf257a62727bcde1882edf'
          '461866e715a1fded49a3f7c043a173d7'
@@ -34,7 +35,8 @@ md5sums=('f5692d2ef952f8c903af90cdd9eb3ce6'
          '978b50c203e156a09977052efc4fe2a5'
          '17ebd1ffddd4cc708117db8ec010c12e'
          'cd542069132376cc10cf0694f309763f'
-         'b7e7e4567895a3fd377646113cc7af40')
+         'b7e7e4567895a3fd377646113cc7af40'
+         '0e2cbf17fefd34917f849073c25f63b6')
 
 prepare() {
 	if [ ! -d ${_pkgbase}-${pkgver} ]; then
@@ -56,6 +58,7 @@ build() {
 	patch -p1 -i "${srcdir}"/linux-5.18.patch
 	patch -p1 -i "${srcdir}"/linux-6.2.patch
 	patch -p1 -i "${srcdir}"/linux-6.4.patch
+	patch -p1 -i "${srcdir}"/linux-6.6.patch
 
 	make KVERS="${_kver}" all
 }
