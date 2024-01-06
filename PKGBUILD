@@ -13,7 +13,7 @@ depends=('dkms')
 makedepends=('linux-headers>=4.15')
 # conflicts=("${_pkgbase}")
 # install=${pkgname}.install
-source=('manual://raid_linux_driver_8_01_00_039_public.zip'
+source=('https://archive.org/download/raid_linux_driver_8_01_00_039_public/raid_linux_driver_8_01_00_039_public.zip'
 		'dkms.conf'
 		'linux-4.15.patch'
 		'linux-5.4.patch'
