@@ -1,0 +1,13 @@
+diff --git a/rc_msg.c b/rc_msg.c
+index a8e8138..1194a70 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -2430,7 +2430,7 @@ void
+ rc_msg_access_ok(rc_access_ok_t accessOk)
+ {
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+-    accessOk.returnStatus = access_ok( accessOk.access_location, accessOk.access_size);
++    accessOk.returnStatus = access_ok((void *) accessOk.access_location, accessOk.access_size);
+ #else
+     accessOk.returnStatus = access_ok( VERIFY_WRITE , accessOk.access_location, accessOk.access_size);
+ #endif
