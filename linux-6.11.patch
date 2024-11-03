@@ -1,0 +1,14 @@
+diff --git a/rc_init.c b/rc_init.c
+index 3f8097b..f57406d 100644
+--- a/rc_init.c
++++ b/rc_init.c
+@@ -2636,8 +2636,7 @@ static struct ctl_table rcraid_table[] = {
+ 	  .maxlen	= sizeof(unsigned int),
+ 	  .mode		= 0644,
+ 	  .proc_handler	= &proc_dointvec
+-	},
+-	{ }
++	}
+ };
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(6,4,0)
