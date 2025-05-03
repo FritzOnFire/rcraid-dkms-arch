@@ -26,9 +26,10 @@ source=('manual://raid_linux_driver_8_01_00_039_public.zip'
 		'linux-6.4.patch'
 		'linux-6.6.patch'
 		'linux-6.9.patch'
-		'linux-6.11.patch')
+		'linux-6.11.patch'
+		'linux-6.14.patch')
 md5sums=('f5692d2ef952f8c903af90cdd9eb3ce6'
-         '3a14dcc84daf257a62727bcde1882edf'
+         '6f78c424353ae927e81bcbfec67afece'
          '461866e715a1fded49a3f7c043a173d7'
          'cac98de11cc5bd61fff72ff1c8cf363d'
          'bd1ef2b6bcefaec0abf7a832e937f01a'
@@ -40,7 +41,8 @@ md5sums=('f5692d2ef952f8c903af90cdd9eb3ce6'
          'b7e7e4567895a3fd377646113cc7af40'
          '0e2cbf17fefd34917f849073c25f63b6'
          'c171e789b72bd9d6cf68f7fa63dec366'
-         '8843beaa9a544bfb5ac6c288a322cb9f')
+         '8843beaa9a544bfb5ac6c288a322cb9f'
+         'ea3b996a096c3d3360daba6f89844726')
 
 prepare() {
 	if [ ! -d ${_pkgbase}-${pkgver} ]; then
