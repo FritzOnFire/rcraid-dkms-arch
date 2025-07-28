@@ -1,0 +1,89 @@
+diff --git a/Makefile b/Makefile
+index 3d3f3ce..7f503af 100644
+--- a/Makefile
++++ b/Makefile
+@@ -22,14 +22,14 @@ RC_DATE=$(shell /bin/date)
+ RC_BUILD_DATE=$(shell /bin/date +'%b %d %Y')
+ PLATFORM=$(shell uname -m)
+ 
+-EXTRA_CFLAGS += -D__LINUX__
+-EXTRA_CFLAGS += -DRC_AHCI_SUPPORT -DRC_AMD_AHCI -DRC_AHCI_AUTOSENSE
+-EXTRA_CFLAGS += -DRC_RAW_SPTD
+-EXTRA_CFLAGS += -DRC_RAW_PASSTHROUGH
+-EXTRA_CFLAGS += -DRC_LSI1068
+-EXTRA_CFLAGS += -DRC_MPT2
+-EXTRA_CFLAGS += -DRC_DETECT_AND_BLOCK_PROMISE_RAID
+-EXTRA_CFLAGS += -DRC_DRIVER_BUILD_DATE='"${RC_BUILD_DATE}"'
++ccflags-y += -D__LINUX__
++ccflags-y += -DRC_AHCI_SUPPORT -DRC_AMD_AHCI -DRC_AHCI_AUTOSENSE
++ccflags-y += -DRC_RAW_SPTD
++ccflags-y += -DRC_RAW_PASSTHROUGH
++ccflags-y += -DRC_LSI1068
++ccflags-y += -DRC_MPT2
++ccflags-y += -DRC_DETECT_AND_BLOCK_PROMISE_RAID
++ccflags-y += -DRC_DRIVER_BUILD_DATE='"${RC_BUILD_DATE}"'
+ 
+ # Build against an installed kernel object tree.
+ # Either set the kernel version here or pass in the version.
+@@ -48,7 +48,7 @@ endif
+ 
+ ifdef KBUILD_SRC
+ ifneq ($(shell grep --quiet "irq_handler_t" $(srctree)/include/linux/interrupt.h && echo yes), yes)
+-EXTRA_CFLAGS += -DNO_IRQ_HANDLER_T
++ccflags-y += -DNO_IRQ_HANDLER_T
+ endif
+ endif
+ 
+diff --git a/rc_msg.c b/rc_msg.c
+index 1194a70..229798d 100644
+--- a/rc_msg.c
++++ b/rc_msg.c
+@@ -351,7 +351,7 @@ void rc_msg_suspend(rc_softstate_t *state, rc_adapter_t* adapter)
+ 	{
+     	rc_printk(RC_INFO2, "rc_msg_shutdown: stop OSIC timer\n");
+ 		state->state &= ~ENABLE_TIMER;
+-		del_timer_sync(&state->timer);
++		timer_delete_sync(&state->timer);
+ 	}
+     rc_printk(RC_ALERT, "rc_msg_suspend: pausing for 1/4 second\n");
+     rc_msg_timeout(HZ>>2);
+@@ -444,7 +444,7 @@ rc_msg_shutdown( rc_softstate_t *statep)
+ 
+ 	rc_printk(RC_INFO2, "rc_msg_shutdown: stop OSIC timer\n");
+ 	statep->state &= ~ENABLE_TIMER;
+-	del_timer_sync(&statep->timer);
++	timer_delete_sync(&statep->timer);
+ 	rc_printk(RC_DEBUG, "rc_msg_shutdown: pausing for 1/4 second\n");
+ 	rc_msg_timeout(HZ>>2);
+ 
+diff --git a/rc_msg_platform.h b/rc_msg_platform.h
+index 19ccfae..3ea43de 100644
+--- a/rc_msg_platform.h
++++ b/rc_msg_platform.h
+@@ -27,7 +27,7 @@
+ #define RC_STHEXT_REDO_STRICT_TYPES
+ #endif //int
+ 
+-#include <stdarg.h>
++#include <linux/stdarg.h>
+ 
+ #ifdef RC_STHEXT_REDO_STRICT_TYPES
+ #define int Cannot_USE_int_because_it_is_ambiguous
+@@ -351,7 +351,7 @@ typedef struct rc_send_arg_s {
+ 			//
+ 			//    Sent to STH from driver
+ 			//
+-			void *controller_handle;            
++			void *controller_handle;
+ 		} interrupt_call;
+ 		struct {
+ 			struct rc_srb_s *srb;
+@@ -510,7 +510,7 @@ typedef struct rc_interface_s {
+     rc_function_t *send_function;
+ 	struct rc_send_arg_s *send_arg;
+     void *check_interrupt_arg;
+-    
++
+ 
+ 	rc_function_t *receive_function;
+     rc_function_t *schedule_dpc_function;
